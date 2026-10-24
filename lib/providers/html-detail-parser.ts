@@ -4,6 +4,35 @@ import type { Movie } from "./types";
 export type MovieDetail = Movie & {
   kind: "movie" | "series";
 };
+export type Episode = {
+  season: number;
+  episode: number;
+  title: string;
+  slug: string;
+};
+
+export function parseEpisodes(html: string): Episode[] {
+  const $ = cheerio.load(html);
+  const raw = $('script[type="application/json"]').first().html();
+  if (!raw) return [];
+
+  try {
+    const data = JSON.parse(raw) as Record<
+      string,
+      { s: number; episode_no: number; title: string; slug: string }[]
+    >;
+    return Object.values(data)
+      .flat()
+      .map((ep) => ({
+        season: ep.s,
+        episode: ep.episode_no,
+        title: ep.title,
+        slug: ep.slug,
+      }));
+  } catch {
+    return [];
+  }
+}
 
 const clean = (s: string | undefined | null) =>
   (s ?? "").replace(/\s+/g, " ").trim();
