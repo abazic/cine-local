@@ -3,7 +3,7 @@ import type { Movie } from "@/lib/providers/types";
 
 export default function MovieCard({ movie }: { movie: Movie }) {
   return (
-        <Link href={`/title/${movie.id}`} className="group block w-40 shrink-0 md:w-48">
+           <Link href={`/title/${movie.id}`} className="group block w-28 shrink-0 sm:w-36 md:w-48">
       <div className="aspect-[2/3] overflow-hidden rounded-md bg-zinc-800 transition-transform duration-300 group-hover:scale-105">
         {movie.poster ? (
           // eslint-disable-next-line @next/next/no-img-element

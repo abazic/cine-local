@@ -34,7 +34,7 @@ export default function HeroBanner({ movies }: { movies: Movie[] }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
       <div className="relative max-w-xl">
-        <h1 className="text-4xl font-extrabold md:text-6xl">{movie.title}</h1>
+                <h1 className="text-2xl font-extrabold sm:text-4xl md:text-6xl">{movie.title}</h1>
         <p className="mt-2 text-sm text-zinc-300">
           {movie.year} · {movie.genres.join(", ")}
         </p>
