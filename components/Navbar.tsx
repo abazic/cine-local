@@ -9,12 +9,9 @@ export default function Navbar() {
           CINE LOCAL
         </Link>
         <nav className="hidden gap-6 text-sm text-zinc-300 md:flex">
-          <Link href="/" className="hover:text-white">
-            Beranda
-          </Link>
-           <Link href="/watchlist" className="hover:text-white">
-            Daftar Saya
-          </Link>
+          <Link href="/" className="hover:text-white">Beranda</Link>
+          <Link href="/watchlist" className="hover:text-white">Daftar Saya</Link>
+          <Link href="/history" className="hover:text-white">Riwayat</Link>
         </nav>
       </div>
       <SearchBar />

@@ -1,4 +1,5 @@
 import WatchlistButton from "@/components/WatchlistButton";
+import HistoryTracker from "@/components/HistoryTracker";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -26,6 +27,7 @@ export default async function TitlePage({
   return (
     <main className="min-h-screen bg-black text-white">
       <Navbar />
+            <HistoryTracker movie={movie} />
       <div className="mx-auto max-w-3xl px-6 pt-28">
         <Link href="/" className="text-sm text-zinc-400 hover:text-white">
           ← Kembali
