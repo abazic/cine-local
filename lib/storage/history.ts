@@ -15,7 +15,7 @@ function subscribe(callback: () => void) {
   };
 }
 
-function getSnapshot(): string {
+function readRaw(): string {
   try {
     return localStorage.getItem(KEY) ?? "[]";
   } catch {
@@ -41,39 +41,36 @@ function parse(raw: string): HistoryEntry[] {
   }
 }
 
+function write(entries: HistoryEntry[]) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(entries));
+  } catch {}
+  window.dispatchEvent(new Event(EVENT));
+}
+
 export function useHistory() {
-  const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const raw = useSyncExternalStore(subscribe, readRaw, getServerSnapshot);
   const list = useMemo(() => parse(raw), [raw]);
 
-  const add = useCallback(
-    (movie: Movie) => {
-      const filtered = list.filter(
-        (e) => !(e.movie.id === movie.id && e.movie.providerId === movie.providerId)
-      );
-      const next: HistoryEntry[] = [
-        { movie, watchedAt: new Date().toISOString() },
-        ...filtered,
-      ].slice(0, 50); // simpan maksimal 50 entri
-      try {
-        localStorage.setItem(KEY, JSON.stringify(next));
-      } catch {}
-      window.dispatchEvent(new Event(EVENT));
-    },
-    [list]
-  );
+  // Selalu baca data terbaru dari localStorage, bukan dari variabel render
+  const add = useCallback((movie: Movie) => {
+    const current = parse(readRaw());
+    const filtered = current.filter(
+      (e) => !(e.movie.id === movie.id && e.movie.providerId === movie.providerId)
+    );
+    write(
+      [{ movie, watchedAt: new Date().toISOString() }, ...filtered].slice(0, 50)
+    );
+  }, []);
 
-  const remove = useCallback(
-    (movie: Movie) => {
-      const next = list.filter(
+  const remove = useCallback((movie: Movie) => {
+    const current = parse(readRaw());
+    write(
+      current.filter(
         (e) => !(e.movie.id === movie.id && e.movie.providerId === movie.providerId)
-      );
-      try {
-        localStorage.setItem(KEY, JSON.stringify(next));
-      } catch {}
-      window.dispatchEvent(new Event(EVENT));
-    },
-    [list]
-  );
+      )
+    );
+  }, []);
 
   const clear = useCallback(() => {
     try {
