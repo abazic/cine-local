@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import type { Movie, MovieProvider } from "./types";
 import { parseMovieCatalog } from "./html-parser";
 import { parseDetailPage, parseEpisodes } from "./html-detail-parser";
@@ -8,6 +9,7 @@ type HtmlProviderConfig = {
   catalogUrl: string;
   baseUrl: string;
   timeoutMs?: number;
+  revalidate?: number;
 };
 
 async function fetchHtml(url: string, timeoutMs: number): Promise<string> {
@@ -28,36 +30,23 @@ async function fetchHtml(url: string, timeoutMs: number): Promise<string> {
 
 export function createHtmlProvider(config: HtmlProviderConfig): MovieProvider {
   const timeoutMs = config.timeoutMs ?? 8000;
+  const revalidate = config.revalidate ?? 60 * 60; // default: 1 jam
 
-  async function loadCatalog(): Promise<Movie[]> {
-    const html = await fetchHtml(config.catalogUrl, timeoutMs);
-    return parseMovieCatalog({
-      providerId: config.id,
-      baseUrl: config.baseUrl,
-      html,
-    });
-  }
-
-  return {
-    id: config.id,
-    name: config.name,
-
-    async getCatalog(category) {
-      const movies = await loadCatalog();
-      return category
-        ? movies.filter((movie) => movie.genres.includes(category))
-        : movies;
+  const getCachedCatalog = unstable_cache(
+    async (): Promise<Movie[]> => {
+      const html = await fetchHtml(config.catalogUrl, timeoutMs);
+      return parseMovieCatalog({
+        providerId: config.id,
+        baseUrl: config.baseUrl,
+        html,
+      });
     },
+    [`catalog-${config.id}`],
+    { revalidate, tags: [`catalog-${config.id}`] }
+  );
 
-    async search(query) {
-      const movies = await loadCatalog();
-      const normalized = query.trim().toLowerCase();
-      return movies.filter((movie) =>
-        movie.title.toLowerCase().includes(normalized)
-      );
-    },
-
-    async getDetails(id) {
+  const getCachedDetail = unstable_cache(
+    async (id: string): Promise<Movie | null> => {
       const detailUrl = `${config.baseUrl}/${id}`;
       try {
         const html = await fetchHtml(detailUrl, timeoutMs);
@@ -68,6 +57,32 @@ export function createHtmlProvider(config: HtmlProviderConfig): MovieProvider {
       } catch {
         return null;
       }
+    },
+    [`detail-${config.id}`],
+    { revalidate, tags: [`detail-${config.id}`] }
+  );
+
+  return {
+    id: config.id,
+    name: config.name,
+
+    async getCatalog(category) {
+      const movies = await getCachedCatalog();
+      return category
+        ? movies.filter((movie) => movie.genres.includes(category))
+        : movies;
+    },
+
+    async search(query) {
+      const movies = await getCachedCatalog();
+      const normalized = query.trim().toLowerCase();
+      return movies.filter((movie) =>
+        movie.title.toLowerCase().includes(normalized)
+      );
+    },
+
+    async getDetails(id) {
+      return getCachedDetail(id);
     },
   };
 }
