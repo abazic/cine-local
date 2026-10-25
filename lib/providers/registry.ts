@@ -29,6 +29,27 @@ const htmlProviders: MovieProvider[] = [
 ];
 
 export const providers: MovieProvider[] = [...htmlProviders, demoProvider];
+export const catalogProviders: MovieProvider[] = htmlProviders.length > 0 ? htmlProviders : [demoProvider];
+export async function getGenreCatalog(genre: string): Promise<Movie[]> {
+  const genreUrl = genre.toLowerCase().replace(/\s+/g, "-");
+  const results = await Promise.allSettled(
+    htmlProviders.map((p) =>
+      p.getCatalog ? p.getCatalog(genreUrl) : Promise.resolve([])
+    )
+  );
+
+  const movies = results.flatMap((r) =>
+    r.status === "fulfilled" ? r.value : []
+  );
+
+  const seen = new Set<string>();
+  return movies.filter((movie) => {
+    const key = `${movie.providerId}:${movie.detailUrl}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 export async function getUnifiedCatalog(category?: string): Promise<Movie[]> {
   const results = await Promise.allSettled(

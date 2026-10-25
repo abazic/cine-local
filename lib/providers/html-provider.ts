@@ -66,13 +66,25 @@ export function createHtmlProvider(config: HtmlProviderConfig): MovieProvider {
     id: config.id,
     name: config.name,
 
-    async getCatalog(category) {
-      const movies = await getCachedCatalog();
-      return category
-        ? movies.filter((movie) => movie.genres.includes(category))
-        : movies;
+        async getCatalog(category) {
+      if (category) {
+        const genreUrl = `${config.baseUrl}/genre/${category}`;
+        const cachedGenre = unstable_cache(
+          async () => {
+            const html = await fetchHtml(genreUrl, timeoutMs);
+            return parseMovieCatalog({
+              providerId: config.id,
+              baseUrl: config.baseUrl,
+              html,
+            });
+          },
+          [`genre-${config.id}-${category}`],
+          { revalidate, tags: [`genre-${config.id}-${category}`] }
+        );
+        return cachedGenre();
+      }
+      return getCachedCatalog();
     },
-
     async search(query) {
       const movies = await getCachedCatalog();
       const normalized = query.trim().toLowerCase();
