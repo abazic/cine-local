@@ -23,5 +23,5 @@ export interface MovieProvider {
   name: string;
   search(query: string): Promise<Movie[]>;
   getDetails(id: string): Promise<Movie | null>;
-  getCatalog(category?: string): Promise<Movie[]>;
+    getCatalog(category?: string, page?: number): Promise<Movie[]>;
 }

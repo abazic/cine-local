@@ -50,7 +50,23 @@ export async function getGenreCatalog(genre: string): Promise<Movie[]> {
     return true;
   });
 }
+export async function getPagedCatalog(page: number): Promise<Movie[]> {
+  const results = await Promise.allSettled(
+    htmlProviders.map((p) => p.getCatalog(undefined, page))
+  );
 
+  const movies = results.flatMap((r) =>
+    r.status === "fulfilled" ? r.value : []
+  );
+
+  const seen = new Set<string>();
+  return movies.filter((movie) => {
+    const key = `${movie.providerId}:${movie.detailUrl}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 export async function getUnifiedCatalog(category?: string): Promise<Movie[]> {
   const results = await Promise.allSettled(
     providers.map((provider) => provider.getCatalog(category))

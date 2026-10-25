@@ -2,7 +2,12 @@ import { Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import HeroBanner from "@/components/HeroBanner";
 import MovieCard from "@/components/MovieCard";
-import { getUnifiedCatalog, getGenreCatalog, catalogProviders } from "@/lib/providers/registry";
+import { getUnifiedCatalog, getGenreCatalog, getPagedCatalog } from "@/lib/providers/registry";
+import LoadMore from "@/components/LoadMore";
+async function loadMoreAction(page: number) {
+  "use server";
+  return getPagedCatalog(page);
+}
 const GENRES = ["drama", "action", "horror", "romance", "comedy"];
 
 async function CatalogContent() {
@@ -18,7 +23,12 @@ async function CatalogContent() {
             <MovieCard key={`${movie.providerId}:${movie.id}`} movie={movie} />
           ))}
         </div>
-      </section>
+     </section>
+<section className="px-6 md:px-12">
+  <div className="flex flex-wrap gap-4">
+              <LoadMore loadMore={loadMoreAction} />
+  </div>
+</section>
     </>
   );
 }

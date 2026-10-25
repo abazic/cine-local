@@ -66,7 +66,7 @@ export function createHtmlProvider(config: HtmlProviderConfig): MovieProvider {
     id: config.id,
     name: config.name,
 
-        async getCatalog(category) {
+       async getCatalog(category, page = 1) {
       if (category) {
         const genreUrl = `${config.baseUrl}/genre/${category}`;
         const cachedGenre = unstable_cache(
@@ -83,8 +83,27 @@ export function createHtmlProvider(config: HtmlProviderConfig): MovieProvider {
         );
         return cachedGenre();
       }
+
+      if (page > 1) {
+        const pageUrl = config.catalogUrl.replace(/\/page\/\d+$/, `/page/${page}`);
+        const cachedPage = unstable_cache(
+          async () => {
+            const html = await fetchHtml(pageUrl, timeoutMs);
+            return parseMovieCatalog({
+              providerId: config.id,
+              baseUrl: config.baseUrl,
+              html,
+            });
+          },
+          [`catalog-${config.id}-page-${page}`],
+          { revalidate, tags: [`catalog-${config.id}`] }
+        );
+        return cachedPage();
+      }
+
       return getCachedCatalog();
     },
+    
     async search(query) {
       const movies = await getCachedCatalog();
       const normalized = query.trim().toLowerCase();
