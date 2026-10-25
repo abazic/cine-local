@@ -9,7 +9,7 @@ async function CatalogContent() {
 
   return (
     <>
-      <HeroBanner movie={movies[0]} />
+            <HeroBanner movie={movies.find((m) => m.poster) ?? movies[0]} />
       <section className="px-6 pt-8 md:px-12">
         <h2 className="mb-4 text-xl font-semibold">Baru Ditambahkan</h2>
         <div className="flex gap-4 overflow-x-auto pb-4">

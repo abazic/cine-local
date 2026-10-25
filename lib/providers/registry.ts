@@ -28,7 +28,7 @@ const htmlProviders: MovieProvider[] = [
     : []),
 ];
 
-export const providers: MovieProvider[] = [demoProvider, ...htmlProviders];
+export const providers: MovieProvider[] = [...htmlProviders, demoProvider];
 
 export async function getUnifiedCatalog(category?: string): Promise<Movie[]> {
   const results = await Promise.allSettled(
