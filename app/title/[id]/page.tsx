@@ -39,7 +39,13 @@ export default async function TitlePage({
   if (movie.kind === "series" && movie.episodes && movie.episodes.length > 0) {
     const currentEp = movie.episodes.find((e) => e.slug === selectedEpSlug) || movie.episodes[0];
     if (currentEp) {
-      targetDetailUrl = (currentEp as any).detailUrl || movie.detailUrl;
+      targetDetailUrl = new URL(
+        currentEp.slug,
+        movie.detailUrl.endsWith("/")
+          ? movie.detailUrl
+          : `${new URL(movie.detailUrl).origin}/`,
+      ).toString();
+    
       activeEpisodeTitle = `S${currentEp.season} E${currentEp.episode} — ${currentEp.title}`;
     }
   }
@@ -56,14 +62,35 @@ export default async function TitlePage({
         </Link>
 
         <div className="mt-6 mb-6">
-          {freshStreamUrl && freshStreamUrl.includes(".m3u8") ? (
-              <VideoPlayer src={freshStreamUrl} />
+
+          {freshStreamUrl?.type === "hls" ? (
+            <VideoPlayer src={freshStreamUrl.url} />
+          ) : freshStreamUrl?.type === "embed" ? (
+            <iframe
+              src={freshStreamUrl.url}
+              title="Video player"
+              className="aspect-video w-full rounded-md bg-black border-0"
+              allow="autoplay; fullscreen; picture-in-picture"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
           ) : (
             <div className="w-full aspect-video bg-zinc-900 flex flex-col items-center justify-center rounded-lg border border-zinc-800 text-zinc-400">
-              <p className="font-semibold text-zinc-300">Gagal Memuat Video</p>
-              <p className="text-xs mt-1 text-zinc-500">Tautan stream belum tersedia atau gagal diekstrak.</p>
+              <p className="font-semibold text-zinc-300">Video tidak tersedia di pemutar lokal</p>
+              <p className="text-xs mt-1 text-zinc-500">
+                Coba buka episode langsung di situs sumber.
+              </p>
+              <a
+                href={targetDetailUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 rounded-md bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-zinc-200"
+              >
+                Tonton di Situs Sumber ↗
+              </a>
             </div>
           )}
+
           {activeEpisodeTitle && (
             <p className="mt-2 text-sm text-zinc-400 font-medium">Memutar: {activeEpisodeTitle}</p>
           )}
@@ -96,8 +123,8 @@ export default async function TitlePage({
                     <Link
                       href={`/title/${id}?ep=${ep.slug}`}
                       className={`block rounded-lg px-4 py-3 text-sm transition-colors ${
-                        isSelected 
-                          ? "bg-red-600 text-white font-bold" 
+                        isSelected
+                          ? "bg-red-600 text-white font-bold"
                           : "bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
                       }`}
                     >

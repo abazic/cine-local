@@ -1,0 +1,57 @@
+export async function getFreshStreamUrl(detailUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch(detailUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      },
+      next: { revalidate: 0 },
+    });
+    
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    // 1. Cari pola .m3u8 langsung di halaman utama
+    const m3u8Regex = /https?:\/\/[^\s"'<>]+?\.m3u8[^\s"'<>*/]*/g;
+    const m3u8Matches = html.match(m3u8Regex);
+    if (m3u8Matches && m3u8Matches.length > 0) {
+      return m3u8Matches[0];
+    }
+
+    // 2. Cari iframe src
+        const iframeRegex = /<iframe\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/i;
+    const match = html.match(iframeRegex);
+    
+    if (match && match[1]) {
+      let targetUrl = match[1];
+      if (targetUrl.startsWith("//")) {
+        targetUrl = "https:" + targetUrl;
+      }
+
+      const embedRes = await fetch(targetUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Referer": detailUrl,
+        },
+        next: { revalidate: 0 },
+      });
+      
+      if (embedRes.ok) {
+        const embedHtml = await embedRes.text();
+        const embedMatches = embedHtml.match(m3u8Regex);
+        if (embedMatches && embedMatches.length > 0) {
+          return embedMatches[0];
+        }
+      }
+
+      // 3. FALLBACK: Jika .m3u8 terenkripsi/dinamis di JS, kembalikan URL iframe itu sendiri
+      // agar bisa dirender sebagai iframe player langsung.
+      return targetUrl;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Gagal mengekstrak stream URL:", error);
+    return null;
+  }
+}

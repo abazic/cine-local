@@ -13,6 +13,9 @@ export default function VideoPlayer({ src, poster }: VideoPlayerProps) {
 
   const isIframeUrl = src.includes("iframe") || src.includes("videonode.de");
 
+  // Jika URL berupa iframe eksternal, kita arahkan melalui proxy lokal kita
+  const finalSrc = isIframeUrl ? `/api/proxy?url=${encodeURIComponent(src)}` : src;
+
   useEffect(() => {
     if (isIframeUrl) return;
 
@@ -37,8 +40,11 @@ export default function VideoPlayer({ src, poster }: VideoPlayerProps) {
   if (isIframeUrl) {
     return (
       <iframe
-        src={src}
+        src={finalSrc}
+        title="Video player"
         className="aspect-video w-full rounded-md bg-black border-0"
+        allow="autoplay; fullscreen; picture-in-picture"
+        referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
       />
     );
